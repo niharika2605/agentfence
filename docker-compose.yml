@@ -1,0 +1,22 @@
+services:
+  gateway:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    networks:
+      - agent_net
+      - egress_net
+    environment:
+      AGENTFENCE_ENV: development
+
+  agent:
+    build: ./agent
+    depends_on:
+      - gateway
+    networks:
+      - agent_net
+
+networks:
+  agent_net:
+    internal: true
+  egress_net: {}
