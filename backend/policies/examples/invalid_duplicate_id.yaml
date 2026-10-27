@@ -1,0 +1,11 @@
+schema: 1
+name: bad-duplicate
+rules:
+  - id: same-id
+    effect: allow
+    tool: file.read
+    reason: First rule.
+  - id: same-id
+    effect: block
+    tool: email.send
+    reason: Second rule with the same id.

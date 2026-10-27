@@ -1,0 +1,11 @@
+schema: 1
+name: bad-list
+rules:
+  - id: uses-missing-list
+    effect: allow
+    tool: email.send
+    when:
+      - field: args.recipient.registered_domain
+        op: in
+        list: nowhere
+    reason: This rule points to a list that does not exist.

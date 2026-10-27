@@ -1,0 +1,7 @@
+schema: 1
+name: bad-effect
+rules:
+  - id: permit-everything
+    effect: permit
+    tool: file.read
+    reason: The word permit is not a valid effect.

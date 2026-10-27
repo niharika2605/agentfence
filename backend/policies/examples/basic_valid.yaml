@@ -1,0 +1,57 @@
+schema: 1
+name: example-basic
+lists:
+  allowed_domains:
+    - company.com
+rules:
+  - id: allow-read-public-and-internal-files
+    effect: allow
+    tool: file.read
+    roles: [viewer, operator, administrator]
+    when:
+      - field: resource.label
+        op: in
+        value: [public, internal]
+    reason: Everyone may read public and internal files.
+
+  - id: approve-read-confidential-files
+    effect: require_approval
+    tool: file.read
+    when:
+      - field: resource.label
+        op: in
+        value: [confidential, secret]
+    reason: Confidential and secret files need a human approval.
+
+  - id: allow-company-email
+    effect: allow
+    tool: email.send
+    roles: [operator, administrator]
+    when:
+      - field: args.recipient.registered_domain
+        op: in
+        list: allowed_domains
+    reason: Operators may email company addresses.
+
+  - id: approve-external-send-after-confidential-read
+    effect: require_approval
+    tool: email.send
+    priority: 150
+    when:
+      - field: session.sensitivity
+        op: gte
+        value: confidential
+      - field: args.recipient.registered_domain
+        op: not_in
+        list: allowed_domains
+    reason: External send after a confidential read.
+
+  - id: block-code-run-after-untrusted-content
+    effect: block
+    tool: code.run
+    priority: 200
+    when:
+      - field: session.untrusted_content
+        op: eq
+        value: true
+    reason: Code execution is blocked once untrusted content entered the session.

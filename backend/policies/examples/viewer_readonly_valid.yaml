@@ -1,0 +1,12 @@
+schema: 1
+name: example-viewer-readonly
+rules:
+  - id: allow-viewer-read-public
+    effect: allow
+    tool: file.read
+    roles: [viewer]
+    when:
+      - field: resource.label
+        op: eq
+        value: public
+    reason: Viewers may read public files only.
