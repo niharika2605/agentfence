@@ -1,0 +1,1 @@
+"""Simulated tools used for development and evaluation (Day 7)."""
