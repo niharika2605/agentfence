@@ -4,7 +4,7 @@ A deterministic MCP policy gateway for AI agents.
 The LLM proposes actions. AgentFence decides.
 
 ## Status
-Phase 0, Day 5: agent isolation checked at runtime, with a control test and CI.
+Phase 1, Day 6: core data models (ToolCall, Decision, ReasonCode, RuleHit).
 
 ## Docs
 - docs/threat_model.md

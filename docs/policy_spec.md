@@ -141,6 +141,12 @@ Reason: when the gateway is unsure, it must become stricter, never looser.
 | `RULE_APPROVAL` | An approval rule matched and no block rule did |
 | `RULE_ALLOW` | Only allow rules matched |
 | `POLICY_UNAVAILABLE` | Policy engine or database not available (fail closed) |
+| `UNKNOWN_TOOL` | The tool is not registered |
+| `INVALID_ARGUMENTS` | Arguments failed schema validation |
+| `CANONICALIZATION_FAILED` | A value could not be normalized safely |
+
+Each code has one fixed effect. `RULE_APPROVAL` means require_approval.
+`RULE_ALLOW` means allow. Every other code means block.
 
 ## 8. Worked examples
 
