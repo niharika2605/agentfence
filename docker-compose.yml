@@ -8,13 +8,39 @@ services:
       - egress_net
     environment:
       AGENTFENCE_ENV: development
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   agent:
     build: ./agent
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     networks:
       - agent_net
+    environment:
+      AGENTFENCE_GATEWAY_URL: http://gateway:8000
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  agent_control:
+    build: ./agent
+    profiles:
+      - control
+    networks:
+      - egress_net
+    command: ["python", "check_isolation.py", "--control"]
 
 networks:
   agent_net:

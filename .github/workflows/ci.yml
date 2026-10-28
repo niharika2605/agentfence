@@ -18,3 +18,13 @@ jobs:
       - run: ruff check src tests
       - run: mypy src
       - run: pytest --cov=agentfence
+
+  isolation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up --build -d --wait
+      - run: docker compose run --rm agent
+      - run: docker compose run --rm agent_control
+      - if: always()
+        run: docker compose down
