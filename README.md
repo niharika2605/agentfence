@@ -4,7 +4,7 @@ A deterministic MCP policy gateway for AI agents.
 The LLM proposes actions. AgentFence decides.
 
 ## Status
-Phase 1, Day 7: simulated tools (file read, email send, db query, code run) and executor guard.
+Phase 1, Day 8: tool registry and strict schema validation (unknown tools and arguments blocked).
 
 ## Docs
 - docs/threat_model.md
