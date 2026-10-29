@@ -4,7 +4,7 @@ A deterministic MCP policy gateway for AI agents.
 The LLM proposes actions. AgentFence decides.
 
 ## Status
-Phase 1, Day 9: path canonicalizer (dot dot, symlinks, case, Unicode, allowed roots).
+Phase 1, Day 10: URL, host and email canonicalizers (punycode, look alikes, userinfo, registered domain).
 
 ## Docs
 - docs/threat_model.md
