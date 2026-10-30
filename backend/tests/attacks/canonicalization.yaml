@@ -1,0 +1,687 @@
+# Canonicalization attack corpus (Day 12).
+# Each entry is one tool call. "expect: ok" means the call passes canonicalization and
+# must come out as the "canonical" values. "expect: block" means a block Decision with
+# the given "code" (default CANONICALIZATION_FAILED).
+# Strings use double quotes. In YAML, "\\u002e" is the 6 characters \u002e (text for the
+# decoder), while "\u202e" is one real character.
+# Policy still decides about protected files. Canonicalization only shows the real target.
+
+# ---------------- paths that are fine ----------------
+- id: path-ok-plain
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt"}
+  expect: ok
+  canonical: {path: "/workspace/public/readme.txt"}
+
+- id: path-ok-double-slashes
+  tool: file.read
+  args: {path: "/workspace//public///readme.txt"}
+  expect: ok
+  canonical: {path: "/workspace/public/readme.txt"}
+
+- id: path-ok-relative
+  tool: file.read
+  args: {path: "public/readme.txt"}
+  expect: ok
+  canonical: {path: "/workspace/public/readme.txt"}
+
+- id: path-ok-dotdot-inside-root
+  tool: file.read
+  args: {path: "/workspace/public/../notes/meeting.txt"}
+  expect: ok
+  canonical: {path: "/workspace/notes/meeting.txt"}
+
+- id: path-ok-encoded-dotdot-inside-root
+  tool: file.read
+  args: {path: "/workspace/public/%2e%2e/notes/meeting.txt"}
+  expect: ok
+  canonical: {path: "/workspace/notes/meeting.txt"}
+  layers: {path: [url]}
+
+- id: path-ok-double-encoded-dotdot-inside-root
+  tool: file.read
+  args: {path: "/workspace/public/%252e%252e/notes/meeting.txt"}
+  expect: ok
+  canonical: {path: "/workspace/notes/meeting.txt"}
+  layers: {path: [url, url]}
+
+- id: path-ok-symlink-inside-root
+  tool: file.read
+  args: {path: "/workspace/public/latest"}
+  expect: ok
+  canonical: {path: "/workspace/public/readme.txt"}
+
+- id: path-ok-non-english-name
+  tool: file.read
+  args: {path: "/workspace/public/\u0930\u093f\u092a\u094b\u0930\u094d\u091f.txt"}
+  expect: ok
+  canonical: {path: "/workspace/public/\u0930\u093f\u092a\u094b\u0930\u094d\u091f.txt"}
+
+# ---------------- paths that reach a protected file (policy must block these) ----------------
+- id: path-exposes-secret-via-symlink
+  tool: file.read
+  args: {path: "/workspace/public/shortcut"}
+  expect: ok
+  canonical: {path: "/workspace/keys/api_keys.txt"}
+
+- id: path-exposes-secret-via-encoded-dotdot
+  tool: file.read
+  args: {path: "/workspace/public/%2e%2e/keys/api_keys.txt"}
+  expect: ok
+  canonical: {path: "/workspace/keys/api_keys.txt"}
+  layers: {path: [url]}
+
+- id: path-exposes-secret-via-unicode-escape
+  tool: file.read
+  args: {path: "/workspace/public/\\u002e\\u002e/keys/api_keys.txt"}
+  expect: ok
+  canonical: {path: "/workspace/keys/api_keys.txt"}
+  layers: {path: [unicode]}
+
+- id: path-exposes-secret-via-base64
+  tool: file.read
+  args: {path: "L3dvcmtzcGFjZS9rZXlzL2FwaV9rZXlzLnR4dA=="}
+  expect: ok
+  canonical: {path: "/workspace/keys/api_keys.txt"}
+  layers: {path: [base64]}
+
+# ---------------- path traversal ----------------
+- id: path-etc-passwd
+  tool: file.read
+  args: {path: "/etc/passwd"}
+  expect: block
+
+- id: path-proc-environ
+  tool: file.read
+  args: {path: "/proc/self/environ"}
+  expect: block
+
+- id: path-root
+  tool: file.read
+  args: {path: "/"}
+  expect: block
+
+- id: path-dotdot-relative
+  tool: file.read
+  args: {path: "../../../etc/passwd"}
+  expect: block
+
+- id: path-dotdot-from-root
+  tool: file.read
+  args: {path: "/workspace/../etc/passwd"}
+  expect: block
+
+- id: path-dotdot-encoded-twice-in-a-row
+  tool: file.read
+  args: {path: "/workspace/%2e%2e/%2e%2e/etc/passwd"}
+  expect: block
+
+- id: path-dotdot-fully-encoded
+  tool: file.read
+  args: {path: "%2e%2e%2f%2e%2e%2fetc%2fpasswd"}
+  expect: block
+
+- id: path-dotdot-double-encoded
+  tool: file.read
+  args: {path: "%252e%252e%252f%252e%252e%252fetc%252fpasswd"}
+  expect: block
+
+- id: path-dotdot-triple-encoded
+  tool: file.read
+  args: {path: "%25252e%25252e%25252f%25252e%25252e%25252fetc"}
+  expect: block
+
+- id: path-dotdot-quadruple-encoded
+  tool: file.read
+  args: {path: "%2525252e%2525252e%2525252f%2525252e%2525252e%2525252fetc"}
+  expect: block
+
+- id: path-overlong-utf8-dotdot
+  tool: file.read
+  args: {path: "%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd"}
+  expect: block
+
+- id: path-unicode-escape-dotdot
+  tool: file.read
+  args: {path: "\\u002e\\u002e/\\u002e\\u002e/etc/passwd"}
+  expect: block
+
+- id: path-hex-escape-dotdot
+  tool: file.read
+  args: {path: "\\x2e\\x2e/\\x2e\\x2e/etc/passwd"}
+  expect: block
+
+- id: path-base64-dotdot
+  tool: file.read
+  args: {path: "Li4vLi4vZXRjL3Bhc3N3ZA=="}
+  expect: block
+
+- id: path-base64-of-url-encoded-dotdot
+  tool: file.read
+  args: {path: "JTJlJTJlJTJmJTJlJTJlJTJmZXRjJTJmcGFzc3dk"}
+  expect: block
+
+- id: path-sibling-prefix
+  tool: file.read
+  args: {path: "/workspace-evil/x"}
+  expect: block
+
+- id: path-wrong-case
+  tool: file.read
+  args: {path: "/WORKSPACE/public/readme.txt"}
+  expect: block
+
+- id: path-symlink-escape
+  tool: file.read
+  args: {path: "/workspace/public/escape"}
+  expect: block
+
+- id: path-symlink-escape-with-file
+  tool: file.read
+  args: {path: "/workspace/public/escape/passwd"}
+  expect: block
+
+- id: path-symlink-loop
+  tool: file.read
+  args: {path: "/workspace/loop/a"}
+  expect: block
+
+# ---------------- path tricks with odd characters ----------------
+- id: path-null-byte
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt\x00.png"}
+  expect: block
+
+- id: path-encoded-null-byte
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt%00.png"}
+  expect: block
+
+- id: path-newline
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt\n/etc/passwd"}
+  expect: block
+
+- id: path-backslash-traversal
+  tool: file.read
+  args: {path: "..\\..\\etc\\passwd"}
+  expect: block
+
+- id: path-mixed-slashes
+  tool: file.read
+  args: {path: "/workspace/..\\..\\etc"}
+  expect: block
+
+- id: path-windows-drive-backslash
+  tool: file.read
+  args: {path: "C:\\Windows\\win.ini"}
+  expect: block
+
+- id: path-windows-drive-slash
+  tool: file.read
+  args: {path: "C:/Windows/win.ini"}
+  expect: block
+
+- id: path-network-share
+  tool: file.read
+  args: {path: "//server/share/file"}
+  expect: block
+
+- id: path-home-shortcut
+  tool: file.read
+  args: {path: "~/.ssh/id_rsa"}
+  expect: block
+
+- id: path-fullwidth-slashes
+  tool: file.read
+  args: {path: "\uff0f\uff0e\uff0e\uff0fetc\uff0fpasswd"}
+  expect: block
+
+- id: path-fullwidth-dots
+  tool: file.read
+  args: {path: "/workspace/\uff0e\uff0e/etc"}
+  expect: block
+
+- id: path-bidi-override
+  tool: file.read
+  args: {path: "/workspace/public/\u202etxt.exe"}
+  expect: block
+
+- id: path-zero-width-space
+  tool: file.read
+  args: {path: "/workspace/pub\u200blic/readme.txt"}
+  expect: block
+
+- id: path-trailing-dot
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt."}
+  expect: block
+
+- id: path-alternate-data-stream
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt::$DATA"}
+  expect: block
+
+- id: path-bad-percent-escape
+  tool: file.read
+  args: {path: "/workspace/%zz"}
+  expect: block
+
+- id: path-lone-percent
+  tool: file.read
+  args: {path: "/workspace/50%.txt"}
+  expect: block
+
+- id: path-bad-unicode-escape
+  tool: file.read
+  args: {path: "/workspace/\\u12"}
+  expect: block
+
+- id: path-surrogate-escape
+  tool: file.read
+  args: {path: "/workspace/\\ud83d\\ude00"}
+  expect: block
+
+# ---------------- bad shape of the call ----------------
+- id: call-path-is-a-number
+  tool: file.read
+  args: {path: 5}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+- id: call-path-is-a-list
+  tool: file.read
+  args: {path: ["/workspace/public/readme.txt"]}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+- id: call-empty-path
+  tool: file.read
+  args: {path: ""}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+- id: call-extra-argument
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt", mode: "w"}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+- id: call-client-supplied-decision
+  tool: file.read
+  args: {path: "/workspace/public/readme.txt", allow: true}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+- id: call-unknown-tool
+  tool: shell.run
+  args: {cmd: "cat /etc/passwd"}
+  expect: block
+  code: UNKNOWN_TOOL
+
+- id: call-tool-name-wrong-case
+  tool: File.Read
+  args: {path: "/workspace/public/readme.txt"}
+  expect: block
+  code: UNKNOWN_TOOL
+
+# ---------------- email addresses ----------------
+- id: email-ok-plain
+  tool: email.send
+  args: {to: "me@company.com", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "me@company.com"}
+
+- id: email-ok-cleaned
+  tool: email.send
+  args: {to: "Me.Name+Tag@Company.COM", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "me.name+tag@company.com"}
+
+- id: email-ok-trailing-dot-domain
+  tool: email.send
+  args: {to: "me@company.com.", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "me@company.com"}
+
+- id: email-ok-encoded-at-sign
+  tool: email.send
+  args: {to: "me%40company.com", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "me@company.com"}
+  layers: {to: [url]}
+
+- id: email-ok-unicode-escape
+  tool: email.send
+  args: {to: "\\u006de@company.com", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "me@company.com"}
+  layers: {to: [unicode]}
+
+- id: email-ok-international-domain
+  tool: email.send
+  args: {to: "a@b\u00fccher.example", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "a@xn--bcher-kva.example"}
+
+- id: email-ok-attacker-address-is-policys-job
+  tool: email.send
+  args: {to: "attacker@evil.example", subject: "Hi", body: "Text"}
+  expect: ok
+  canonical: {to: "attacker@evil.example"}
+
+- id: email-body-is-never-decoded
+  tool: email.send
+  args: {to: "me@company.com", subject: "Hi", body: "%2e%2e%2f and \\u002e and Li4vLi4vZXRjL3Bhc3N3ZA=="}
+  expect: ok
+  canonical: {body: "%2e%2e%2f and \\u002e and Li4vLi4vZXRjL3Bhc3N3ZA=="}
+
+- id: email-two-at-signs
+  tool: email.send
+  args: {to: "a@b@evil.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-two-recipients-comma
+  tool: email.send
+  args: {to: "a@evil.com,b@good.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-two-recipients-semicolon
+  tool: email.send
+  args: {to: "a@evil.com;b@good.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-two-recipients-encoded-comma
+  tool: email.send
+  args: {to: "a@evil.com%2cb@good.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-display-name
+  tool: email.send
+  args: {to: "Name <a@b.com>", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-quoted-local-part
+  tool: email.send
+  args: {to: "\"a@b\"@evil.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-percent-routing
+  tool: email.send
+  args: {to: "user%25evil.com@good.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-header-injection-raw
+  tool: email.send
+  args: {to: "me@company.com\r\nBcc: x@evil.example", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-header-injection-encoded
+  tool: email.send
+  args: {to: "me@company.com%0d%0aBcc:%20x@evil.example", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-address-literal
+  tool: email.send
+  args: {to: "a@[1.2.3.4]", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-ip-domain
+  tool: email.send
+  args: {to: "a@1.2.3.4", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-localhost
+  tool: email.send
+  args: {to: "a@localhost", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-cyrillic-lookalike-domain
+  tool: email.send
+  args: {to: "a@\u0430pple.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-fullwidth-at-sign
+  tool: email.send
+  args: {to: "a@evil.com\uff20good.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-leading-dot
+  tool: email.send
+  args: {to: ".a@b.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-double-dot
+  tool: email.send
+  args: {to: "a..b@b.com", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-no-dot-in-domain
+  tool: email.send
+  args: {to: "a@b", subject: "Hi", body: "Text"}
+  expect: block
+
+- id: email-empty
+  tool: email.send
+  args: {to: "", subject: "Hi", body: "Text"}
+  expect: block
+  code: INVALID_ARGUMENTS
+
+# ---------------- table names ----------------
+- id: table-ok-plain
+  tool: db.query
+  args: {table: "customers"}
+  expect: ok
+  canonical: {table: "customers", filters: {}, limit: 10}
+
+- id: table-ok-confidential-table-is-policys-job
+  tool: db.query
+  args: {table: "salaries"}
+  expect: ok
+  canonical: {table: "salaries"}
+
+- id: table-ok-url-encoded-letter
+  tool: db.query
+  args: {table: "%73alaries"}
+  expect: ok
+  canonical: {table: "salaries"}
+  layers: {table: [url]}
+
+- id: table-ok-base64
+  tool: db.query
+  args: {table: "cmVwb3J0c190YWJsZQ=="}
+  expect: ok
+  canonical: {table: "reports_table"}
+  layers: {table: [base64]}
+
+- id: table-filters-are-never-decoded
+  tool: db.query
+  args: {table: "customers", filters: {plan: "%2e%2e"}}
+  expect: ok
+  canonical: {table: "customers", filters: {plan: "%2e%2e"}}
+
+- id: table-uppercase
+  tool: db.query
+  args: {table: "Customers"}
+  expect: block
+
+- id: table-statement-in-name
+  tool: db.query
+  args: {table: "customers;drop table customers"}
+  expect: block
+
+- id: table-encoded-null-byte
+  tool: db.query
+  args: {table: "customers%00"}
+  expect: block
+
+- id: table-path-like
+  tool: db.query
+  args: {table: "../salaries"}
+  expect: block
+
+- id: table-comment-trick
+  tool: db.query
+  args: {table: "customers--"}
+  expect: block
+
+- id: table-space
+  tool: db.query
+  args: {table: "cust omers"}
+  expect: block
+
+- id: table-short-base64-is-just-a-bad-name
+  tool: db.query
+  args: {table: "c2FsYXJpZXM="}
+  expect: block
+
+# ---------------- code (free text, never decoded) ----------------
+- id: code-ok-plain
+  tool: code.run
+  args: {code: "print(1)"}
+  expect: ok
+  canonical: {code: "print(1)"}
+
+- id: code-text-is-never-decoded
+  tool: code.run
+  args: {code: "Li4vLi4vZXRjL3Bhc3N3ZA== %2e%2e%2f \\u002e"}
+  expect: ok
+  canonical: {code: "Li4vLi4vZXRjL3Bhc3N3ZA== %2e%2e%2f \\u002e"}
+
+# ---------------- URLs (tool http.get exists only in the test registry) ----------------
+- id: url-ok-plain
+  tool: http.get
+  args: {url: "https://example.com/a/../b#x"}
+  expect: ok
+  canonical: {url: "https://example.com/b"}
+
+- id: url-ok-cleaned
+  tool: http.get
+  args: {url: "HTTPS://Example.COM:443/x"}
+  expect: ok
+  canonical: {url: "https://example.com/x"}
+
+- id: url-ok-encoded-slash
+  tool: http.get
+  args: {url: "https://example.com%2fabc"}
+  expect: ok
+  canonical: {url: "https://example.com/abc"}
+  layers: {url: [url]}
+
+- id: url-ok-double-encoded-dotdot-in-path
+  tool: http.get
+  args: {url: "https://good.example/%252e%252e/x"}
+  expect: ok
+  canonical: {url: "https://good.example/x"}
+  layers: {url: [url, url]}
+
+- id: url-ok-decoy-text-in-path
+  tool: http.get
+  args: {url: "https://good.example/https://evil.example"}
+  expect: ok
+  canonical: {url: "https://good.example/https://evil.example"}
+
+- id: url-userinfo
+  tool: http.get
+  args: {url: "https://example.com@evil.com/"}
+  expect: block
+
+- id: url-encoded-userinfo
+  tool: http.get
+  args: {url: "https://example.com%40evil.com/"}
+  expect: block
+
+- id: url-backslash-userinfo
+  tool: http.get
+  args: {url: "https://evil.example\\@good.example/"}
+  expect: block
+
+- id: url-cloud-metadata
+  tool: http.get
+  args: {url: "http://169.254.169.254/latest/meta-data/"}
+  expect: block
+
+- id: url-decimal-ip
+  tool: http.get
+  args: {url: "http://2130706433/"}
+  expect: block
+
+- id: url-hex-ip
+  tool: http.get
+  args: {url: "http://0x7f.0.0.1/"}
+  expect: block
+
+- id: url-octal-ip
+  tool: http.get
+  args: {url: "http://0177.0.0.1/"}
+  expect: block
+
+- id: url-short-ip
+  tool: http.get
+  args: {url: "http://127.1/"}
+  expect: block
+
+- id: url-ipv6-loopback
+  tool: http.get
+  args: {url: "http://[::1]/"}
+  expect: block
+
+- id: url-ipv4-mapped-ipv6
+  tool: http.get
+  args: {url: "http://[::ffff:127.0.0.1]/"}
+  expect: block
+
+- id: url-localhost-with-port
+  tool: http.get
+  args: {url: "http://localhost:8080/admin"}
+  expect: block
+
+- id: url-internal-name
+  tool: http.get
+  args: {url: "http://metadata.google.internal/"}
+  expect: block
+
+- id: url-cyrillic-lookalike
+  tool: http.get
+  args: {url: "http://\u0430pple.com/"}
+  expect: block
+
+- id: url-file-scheme
+  tool: http.get
+  args: {url: "file:///etc/passwd"}
+  expect: block
+
+- id: url-gopher-scheme
+  tool: http.get
+  args: {url: "gopher://x.example/"}
+  expect: block
+
+- id: url-javascript-scheme
+  tool: http.get
+  args: {url: "javascript:alert(1)"}
+  expect: block
+
+- id: url-scheme-relative
+  tool: http.get
+  args: {url: "//evil.example/x"}
+  expect: block
+
+- id: url-space-in-host
+  tool: http.get
+  args: {url: "https://exa mple.com/"}
+  expect: block
+
+- id: url-null-byte
+  tool: http.get
+  args: {url: "https://good.example/\x00"}
+  expect: block
+
+- id: url-port-out-of-range
+  tool: http.get
+  args: {url: "https://example.com:99999/"}
+  expect: block
+
+- id: url-missing-slashes
+  tool: http.get
+  args: {url: "https:evil.example"}
+  expect: block
