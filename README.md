@@ -4,7 +4,7 @@ A deterministic MCP policy gateway for AI agents.
 The LLM proposes actions. AgentFence decides.
 
 ## Status
-Phase 1, Day 12: canonicalization chain and attack suite (124 attack and normal calls).
+Phase 1, Day 13: identity (roles, signed session tokens, scoped capabilities).
 
 ## Docs
 - docs/threat_model.md

@@ -71,6 +71,8 @@ class ReasonCode(StrEnum):
     UNKNOWN_TOOL = "UNKNOWN_TOOL"
     INVALID_ARGUMENTS = "INVALID_ARGUMENTS"
     CANONICALIZATION_FAILED = "CANONICALIZATION_FAILED"
+    IDENTITY_INVALID = "IDENTITY_INVALID"
+    ROLE_DENIED = "ROLE_DENIED"
 
     @property
     def required_effect(self) -> Effect:
@@ -87,6 +89,8 @@ _CODE_EFFECT: dict[ReasonCode, Effect] = {
     ReasonCode.UNKNOWN_TOOL: Effect.BLOCK,
     ReasonCode.INVALID_ARGUMENTS: Effect.BLOCK,
     ReasonCode.CANONICALIZATION_FAILED: Effect.BLOCK,
+    ReasonCode.IDENTITY_INVALID: Effect.BLOCK,
+    ReasonCode.ROLE_DENIED: Effect.BLOCK,
 }
 
 

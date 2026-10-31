@@ -144,6 +144,8 @@ Reason: when the gateway is unsure, it must become stricter, never looser.
 | `UNKNOWN_TOOL` | The tool is not registered |
 | `INVALID_ARGUMENTS` | Arguments failed schema validation |
 | `CANONICALIZATION_FAILED` | A value could not be normalized safely |
+| `IDENTITY_INVALID` | The session token is missing, forged, expired, revoked or for another session |
+| `ROLE_DENIED` | The role or the session scope does not allow this tool |
 
 Each code has one fixed effect. `RULE_APPROVAL` means require_approval.
 `RULE_ALLOW` means allow. Every other code means block.
