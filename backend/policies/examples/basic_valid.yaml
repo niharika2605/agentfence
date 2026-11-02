@@ -28,7 +28,7 @@ rules:
     tool: email.send
     roles: [operator, administrator]
     when:
-      - field: args.recipient.registered_domain
+      - field: args.to.registered_domain
         op: in
         list: allowed_domains
     reason: Operators may email company addresses.
@@ -41,8 +41,8 @@ rules:
       - field: session.sensitivity
         op: gte
         value: confidential
-      - field: args.recipient.registered_domain
-        op: not_in
+      - field: args.to.registered_domain
+        op: in
         list: allowed_domains
     reason: External send after a confidential read.
 

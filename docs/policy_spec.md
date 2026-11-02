@@ -165,14 +165,24 @@ These use `backend/policies/examples/basic_valid.yaml`.
 | 7 | Administrator runs code in a clean session | block (DEFAULT_DENY, no allow rule written) |
 | 8 | Viewer emails someone at company.com | block (DEFAULT_DENY, role not listed) |
 
-## 9. Lint checks (built on Day 14)
+## 9. Lint checks
 
-- Duplicate rule ids.
-- A rule that can never fire because a stronger rule always covers it (shadowed).
-- An allow rule and a block rule with the same tool and the same conditions.
-- An allow rule with `tool: "*"` and no conditions.
-- Unknown field, operator or list name.
-- Missing `reason`.
+Errors mean the policy should not be activated. Warnings should be read by a person.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| L001 | warning | Shadowed rule: a stronger rule always matches too |
+| L002 | error | Contradictory rules: same calls, different effects |
+| L003 | error | Allow rule for every tool with no conditions |
+| L004 | warning | Duplicate rules: same calls, same effect |
+| L005 | warning | Broad allow rule: a wildcard tool pattern |
+| L006 | warning | Unused list |
+| L007 | warning | Tool pattern matches no registered tool |
+| L008 | warning | Argument name does not exist for the tool |
+| L009 | error | Rule can never match: its conditions contradict each other |
+
+Duplicate rule ids, unknown fields, unknown operators, unknown lists and a missing
+reason are not lint findings. They stop the policy from loading at all
 
 ## 10. Simulator (built on Day 65)
 
